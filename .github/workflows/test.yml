@@ -1,0 +1,42 @@
+name: Test dev container templates
+
+on:
+  workflow_call:
+    inputs:
+      template:
+        type: string
+        description: 'Template to test'
+        required: true
+        default: 'flutter'
+
+  workflow_dispatch:
+    inputs:
+      template:
+        description: 'Template to test'
+        required: true
+        default: 'flutter'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install devcontainers CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Copy files
+        run: |
+          cp -R src/${{ inputs.template }} /tmp/${{ inputs.template }}
+          cp -R test/${{ inputs.template }} /tmp
+          cp -R test/test-utils/test-utils.sh /tmp/${{ inputs.template }}/test-utils.sh
+
+      - name: Build template
+        run: |
+          .github/workflows/build.sh ${{ inputs.template }}
+
+      - name: Launch dev container
+        run: devcontainer up --id-label test-container=${{ inputs.template }} --workspace-folder "/tmp/${{ inputs.template }}"
+
+      - name: Test template
+        run: devcontainer exec --id-label test-container=${{ inputs.template }} --workspace-folder "/tmp/${{ inputs.template }}" /bin/bash -c "cd /workspaces/${{ inputs.template }} && ./test.sh"

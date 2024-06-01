@@ -1,0 +1,29 @@
+name: "Release dev container templates"
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    with:
+      template: "flutter"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs:
+      - test
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Publish"
+        uses: devcontainers/action@v1
+        with:
+          publish-templates: "true"
+          base-path-to-templates: "./src"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
